@@ -8,7 +8,6 @@ import kotlinx.coroutines.*
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
-import java.util.logging.Formatter
 
 class MainActivity : AppCompatActivity() {
     private var formatter = SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())
@@ -21,27 +20,36 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         binding.run.setOnClickListener { onRun() }
-        binding.cancel.setOnClickListener { onCancel() }
+        binding.onRun2.setOnClickListener { onRun2() }
     }
 
     private fun onRun() {
-        log("onRun, start")
-        job = scope.launch {
-            log("coroutine, start")
-            var x = 0
-            while (x < 5 && isActive) {
-                TimeUnit.MILLISECONDS.sleep(1000)
-                log("coroutine, ${x++}, isActive = $isActive")
-            }
-            log("coroutine, end")
-        }
+        scope.launch {
+            log("parent coroutine, start")
 
-        log("onRun, end")
+            val data = async { getData() }
+            val data2 = async { getData2() }
+
+            log("parent coroutine, wait until children return result")
+            val result = "${data.await()}, ${ data2.await()}"
+            log("parent coroutine, children returned: $result")
+
+            log("parent coroutine, end")
+        }
     }
 
-    private fun onCancel() {
-        log("onCancel")
-        job.cancel()
+    private suspend fun getData(): String {
+        delay(1000)
+        return "data"
+    }
+
+    private suspend fun getData2(): String {
+        delay(1500)
+        return "data2"
+    }
+
+    private fun onRun2() {
+
     }
 
     override fun onDestroy() {
